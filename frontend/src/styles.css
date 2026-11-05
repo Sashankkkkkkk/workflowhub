@@ -1,0 +1,23 @@
+:root { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #1c2430; background: #f4f6f9; }
+body { margin: 0; }
+main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.6rem; }
+.card, .item-form, .item, .bar { background: #fff; border: 1px solid #dde3ea; border-radius: 10px; }
+.card { display: grid; gap: 12px; padding: 20px; max-width: 380px; }
+label { display: grid; gap: 4px; font-size: 0.9rem; }
+input, select, button { font: inherit; padding: 8px 10px; border-radius: 6px; border: 1px solid #b9c3cf; }
+button { background: #2457d6; color: #fff; border-color: #2457d6; cursor: pointer; }
+button.link { background: none; color: #2457d6; border: none; text-align: left; padding: 0; }
+button.danger { background: #c0392b; border-color: #c0392b; }
+.bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; margin-bottom: 14px; }
+.item-form { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; margin-bottom: 14px; }
+.item-form input { flex: 1 1 180px; }
+.items { list-style: none; padding: 0; display: grid; gap: 10px; }
+.item { display: flex; justify-content: space-between; gap: 12px; padding: 12px 14px; border-left: 5px solid #e0a800; }
+.item.in_progress { border-left-color: #2457d6; }
+.item.completed { border-left-color: #2e8b57; }
+.item h3 { margin: 0 0 4px; font-size: 1rem; }
+.item p { margin: 0; color: #556; font-size: 0.9rem; }
+.actions { display: flex; gap: 6px; align-items: flex-start; flex-wrap: wrap; }
+.empty { color: #667; padding: 12px; }
+.error { color: #b00020; margin: 0; }
