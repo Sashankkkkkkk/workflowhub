@@ -1,0 +1,89 @@
+version: 2.1
+
+# CircleCI pipeline: runs on every push/PR (CircleCI triggers on all branches by default).
+# Project-level secrets (e.g. registry tokens) are set under
+# Project Settings -> Environment Variables and are never stored in this file.
+
+executors:
+  python:
+    docker:
+      - image: cimg/python:3.12
+    environment:
+      DJANGO_SECRET_KEY: ci-only-not-a-real-secret
+      DJANGO_DEBUG: "false"
+  node:
+    docker:
+      - image: cimg/node:22.12
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+
+jobs:
+  backend:
+    executor: python
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pip-v1-{{ checksum "backend/requirements.txt" }}
+      - run:
+          name: Install dependencies (pip + requirements.txt)
+          working_directory: backend
+          command: pip install -r requirements.txt
+      - save_cache:
+          key: pip-v1-{{ checksum "backend/requirements.txt" }}
+          paths:
+            - ~/.cache/pip
+      - run:
+          name: Run Django tests
+          working_directory: backend
+          command: python manage.py test
+      # Docker commands run on a separate VM provided by this step.
+      - setup_remote_docker
+      - run:
+          name: Build backend Docker image
+          command: docker build -t workflowhub-backend:${CIRCLE_SHA1} ./backend
+      - run:
+          name: Smoke-test the backend container
+          command: |
+            docker run -d --name backend -e DJANGO_SECRET_KEY="$DJANGO_SECRET_KEY" \
+              workflowhub-backend:${CIRCLE_SHA1}
+            # Remote Docker runs on a separate VM, so probe from inside the container.
+            for i in $(seq 1 20); do
+              docker exec backend python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/api/health/').read())" && exit 0
+              sleep 2
+            done
+            docker logs backend
+            exit 1
+
+  frontend:
+    executor: node
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - npm-v1-{{ checksum "frontend/package-lock.json" }}
+      - run:
+          name: Install dependencies (npm ci)
+          working_directory: frontend
+          command: npm ci --no-audit --no-fund
+      - save_cache:
+          key: npm-v1-{{ checksum "frontend/package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Run frontend tests
+          working_directory: frontend
+          command: npm test
+      - setup_remote_docker
+      - run:
+          name: Build frontend Docker image
+          command: |
+            docker build \
+              --build-arg VITE_API_URL="$VITE_API_URL" \
+              -t workflowhub-frontend:${CIRCLE_SHA1} ./frontend
+
+workflows:
+  build-and-test:
+    jobs:
+      - backend
+      - frontend
